@@ -44,9 +44,9 @@ jobs:
       - name: Run tests inside built image
         run: |
           docker run --rm \
-            --entrypoint pytest \
+            --entrypoint python \
             episerve-model:ci \
-            tests/ -v
+            -m pytest tests/ -v
 
       - name: Push image (branch push → latest)
         if: github.event_name == 'push' && github.ref_type == 'branch'
@@ -65,3 +65,4 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.ref_name }}
             ${{ env.IMAGE }}:latest
+            
