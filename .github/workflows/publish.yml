@@ -45,6 +45,7 @@ jobs:
         run: |
           docker run --rm \
             --entrypoint python \
+            --workdir /app \
             episerve-model:ci \
             -m pytest tests/ -v
 
