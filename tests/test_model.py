@@ -1,9 +1,5 @@
-"""
-Unit tests for the null model prediction logic.
-"""
-
-import re
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -14,64 +10,59 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from model import predict
 
 
-SAMPLE_DATA = pd.DataFrame([
-    {"Meldungen": 45,  "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "0-4",  "Region": "Bundesweit", "Kalenderwoche": "2011-W22", "Inzidenz": 28065},
-    {"Meldungen": 108, "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "5-14", "Region": "Bundesweit", "Kalenderwoche": "2011-W22", "Inzidenz": 5267},
-    {"Meldungen": 45,  "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "0-4",  "Region": "Bundesweit", "Kalenderwoche": "2011-W23", "Inzidenz": 27000},
-    {"Meldungen": 108, "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "5-14", "Region": "Bundesweit", "Kalenderwoche": "2011-W23", "Inzidenz": 5100},
-    {"Meldungen": 45,  "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "0-4",  "Region": "Bundesweit", "Kalenderwoche": "2011-W24", "Inzidenz": 26000},
-    {"Meldungen": 108, "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "5-14", "Region": "Bundesweit", "Kalenderwoche": "2011-W24", "Inzidenz": 4900},
-    {"Meldungen": 45,  "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "0-4",  "Region": "Bundesweit", "Kalenderwoche": "2011-W25", "Inzidenz": 25000},
-    {"Meldungen": 108, "Saison": "2010/11", "Erkrankung": "ARE", "Altersgruppe": "5-14", "Region": "Bundesweit", "Kalenderwoche": "2011-W25", "Inzidenz": 4700},
-])
+def make_sample(erkrankungen=("ARE", "ILI"), n_weeks=4):
+    start = datetime(2011, 5, 30)  # a Monday
+    rows = []
+    inzidenz = {"ARE": [28065, 27000, 26000, 25000], "ILI": [5267, 5100, 4900, 4700]}
+    for w in range(n_weeks):
+        date = start + timedelta(weeks=w)
+        for erk in erkrankungen:
+            rows.append({"Erkrankung": erk, "date": date, "Inzidenz": inzidenz[erk][w]})
+    return pd.DataFrame(rows)
+
+
+SAMPLE = make_sample()
 
 
 def test_output_row_count():
-    result = predict(SAMPLE_DATA, horizon_weeks=4, n_reference_weeks=4)
-    n_groups = SAMPLE_DATA.groupby(["Erkrankung", "Altersgruppe", "Region"]).ngroups
-    assert len(result) == 4 * n_groups
+    result = predict(SAMPLE, horizon_weeks=4, n_reference_weeks=4)
+    assert len(result) == 4 * SAMPLE["Erkrankung"].nunique()
 
 
 def test_output_columns():
-    result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=2)
-    expected_cols = {"Meldungen", "Saison", "Erkrankung", "Altersgruppe",
-                     "Region", "Kalenderwoche", "Inzidenz", "Modell", "Horizont_Wochen"}
-    assert expected_cols.issubset(set(result.columns))
+    result = predict(SAMPLE, horizon_weeks=2, n_reference_weeks=2)
+    assert set(result.columns) == {"Erkrankung", "date", "Inzidenz"}
 
 
-def test_modell_label():
-    result = predict(SAMPLE_DATA, horizon_weeks=1, n_reference_weeks=1)
-    assert (result["Modell"] == "baseline-nullmodel").all()
-
-
-def test_horizont_wochen_values():
+def test_rows_per_erkrankung():
     horizon = 3
-    result = predict(SAMPLE_DATA, horizon_weeks=horizon, n_reference_weeks=2)
-    for group, gdf in result.groupby(["Erkrankung", "Altersgruppe", "Region"]):
-        assert sorted(gdf["Horizont_Wochen"].tolist()) == list(range(1, horizon + 1))
+    result = predict(SAMPLE, horizon_weeks=horizon, n_reference_weeks=2)
+    for erkrankung, gdf in result.groupby("Erkrankung"):
+        assert len(gdf) == horizon
 
 
 def test_mean_values_correct():
-    result = predict(SAMPLE_DATA, horizon_weeks=1, n_reference_weeks=2)
-    row = result[
-        (result["Erkrankung"] == "ARE") &
-        (result["Altersgruppe"] == "0-4") &
-        (result["Horizont_Wochen"] == 1)
-    ].iloc[0]
+    result = predict(SAMPLE, horizon_weeks=1, n_reference_weeks=2)
+    # last 2 weeks of ARE: 26000 and 25000 → mean = 25500
+    row = result[result["Erkrankung"] == "ARE"].iloc[0]
     assert row["Inzidenz"] == 25500.0
 
 
 def test_single_reference_week():
-    result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=1)
-    rows = result[
-        (result["Erkrankung"] == "ARE") &
-        (result["Altersgruppe"] == "5-14")
-    ]
+    result = predict(SAMPLE, horizon_weeks=2, n_reference_weeks=1)
+    # last week of ILI: 4700
+    rows = result[result["Erkrankung"] == "ILI"]
     assert (rows["Inzidenz"] == 4700.0).all()
 
 
-def test_future_kalenderwoche_format():
-    result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=2)
-    pattern = re.compile(r"^\d{4}-W\d{2}$")
-    assert result["Kalenderwoche"].apply(lambda x: bool(pattern.match(x))).all()
-    
+def test_future_dates_are_mondays():
+    result = predict(SAMPLE, horizon_weeks=4, n_reference_weeks=2)
+    assert (result["date"].dt.weekday == 0).all()
+
+
+def test_future_dates_advance_weekly():
+    result = predict(SAMPLE, horizon_weeks=4, n_reference_weeks=2)
+    for _, gdf in result.groupby("Erkrankung"):
+        dates = sorted(gdf["date"].tolist())
+        gaps = [(dates[i+1] - dates[i]).days for i in range(len(dates) - 1)]
+        assert all(g == 7 for g in gaps)
