@@ -47,6 +47,7 @@ jobs:
           docker run --rm \
             --entrypoint python \
             --workdir /app \
+            -e PYTHONPATH=/app/src \
             episerve-model:ci \
             -m pytest tests/ -v
 
