@@ -2,6 +2,7 @@
 Unit tests for the null model prediction logic.
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -30,15 +31,18 @@ def test_output_row_count():
     n_groups = SAMPLE_DATA.groupby(["Erkrankung", "Altersgruppe", "Region"]).ngroups
     assert len(result) == 4 * n_groups
 
+
 def test_output_columns():
     result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=2)
     expected_cols = {"Meldungen", "Saison", "Erkrankung", "Altersgruppe",
                      "Region", "Kalenderwoche", "Inzidenz", "Modell", "Horizont_Wochen"}
     assert expected_cols.issubset(set(result.columns))
 
+
 def test_modell_label():
     result = predict(SAMPLE_DATA, horizon_weeks=1, n_reference_weeks=1)
     assert (result["Modell"] == "baseline-nullmodel").all()
+
 
 def test_horizont_wochen_values():
     horizon = 3
@@ -46,9 +50,28 @@ def test_horizont_wochen_values():
     for group, gdf in result.groupby(["Erkrankung", "Altersgruppe", "Region"]):
         assert sorted(gdf["Horizont_Wochen"].tolist()) == list(range(1, horizon + 1))
 
+
 def test_mean_values_correct():
     result = predict(SAMPLE_DATA, horizon_weeks=1, n_reference_weeks=2)
     row = result[
         (result["Erkrankung"] == "ARE") &
-        (result["Altersgruppe"] == "
-        
+        (result["Altersgruppe"] == "0-4") &
+        (result["Horizont_Wochen"] == 1)
+    ].iloc[0]
+    assert row["Inzidenz"] == 25500.0
+
+
+def test_single_reference_week():
+    result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=1)
+    rows = result[
+        (result["Erkrankung"] == "ARE") &
+        (result["Altersgruppe"] == "5-14")
+    ]
+    assert (rows["Inzidenz"] == 4700.0).all()
+
+
+def test_future_kalenderwoche_format():
+    result = predict(SAMPLE_DATA, horizon_weeks=2, n_reference_weeks=2)
+    pattern = re.compile(r"^\d{4}-W\d{2}$")
+    assert result["Kalenderwoche"].apply(lambda x: bool(pattern.match(x))).all()
+    
