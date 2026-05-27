@@ -45,9 +45,8 @@ jobs:
       - name: Run tests inside built image
         run: |
           docker run --rm \
-            --entrypoint python \
             --workdir /app \
-            -e PYTHONPATH=/app/src \
+            --entrypoint python \
             episerve-model:ci \
             -m pytest tests/ -v
 
