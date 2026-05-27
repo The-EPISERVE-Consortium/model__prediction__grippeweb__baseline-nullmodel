@@ -40,6 +40,7 @@ jobs:
           push: false
           load: true
           tags: episerve-model:ci
+          no-cache: true
 
       - name: Run tests inside built image
         run: |
