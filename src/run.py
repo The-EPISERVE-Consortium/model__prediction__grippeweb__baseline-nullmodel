@@ -7,8 +7,9 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 from model import predict
 
-INPUT  = Path("/work/input")
-OUTPUT = Path("/work/output")
+_work  = Path("./work") if Path("./work").exists() else Path("/work")
+INPUT  = _work / "input"
+OUTPUT = _work / "output"
 
 FIXED_REGION      = "Bundesweit"
 FIXED_ALTERSGRUPPE = "15-34"
