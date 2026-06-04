@@ -27,12 +27,12 @@ n_reference   = int(config.get("n_reference_weeks", 4))
 print(f"Config: horizon={horizon_weeks} weeks, reference={n_reference} weeks")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-data_path = INPUT / "data.tsv"
+data_path = INPUT / "input.parquet"
 if not data_path.exists():
-    print("ERROR: /work/input/data.tsv not found", file=sys.stderr)
+    print("ERROR: /work/input/input.parquet not found", file=sys.stderr)
     sys.exit(1)
 
-df = pd.read_csv(data_path, sep="\t")
+df = pd.read_parquet(data_path)
 print(f"Loaded {len(df)} rows")
 
 required_cols = {"Erkrankung", "Altersgruppe", "Region", "Kalenderwoche", "Inzidenz"}
