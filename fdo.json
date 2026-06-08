@@ -11,5 +11,21 @@
   "author": {
     "@type": "Organization",
     "name": "EPISERVE Consortium"
-  }
+  },
+  "additionalProperty": [
+    {
+      "@type": "PropertyValue",
+      "name": "horizon_weeks",
+      "description": "Number of weeks to forecast ahead.",
+      "valueRequired": true,
+      "value": 4
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "n_reference_weeks",
+      "description": "Number of past weeks to average as the baseline prediction.",
+      "valueRequired": true,
+      "value": 4
+    }
+  ]
 }
