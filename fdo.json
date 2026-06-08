@@ -1,0 +1,15 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "SoftwareApplication",
+  "name": "model__prediction__grippeweb__baseline-nullmodel",
+  "description": "Zero-model (null model) forecast for GrippeWeb disease reports. Reads a TSV timeseries of disease reports and predicts the next N weeks by averaging the last M reference weeks per group. Serves as a baseline for comparison with more complex forecast models.",
+  "url": "ghcr.io/the-episerve-consortium/model__prediction__grippeweb__baseline-nullmodel",
+  "codeRepository": "https://github.com/The-EPISERVE-Consortium/model__prediction__grippeweb__baseline-nullmodel",
+  "applicationCategory": "algorithm",
+  "operatingSystem": "Linux",
+  "runtimePlatform": "Docker",
+  "author": {
+    "@type": "Organization",
+    "name": "EPISERVE Consortium"
+  }
+}
