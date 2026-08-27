@@ -15,7 +15,7 @@ Every EPISERVE model container reads from and writes to fixed paths. The platfor
 | Path | Direction | Description |
 |---|---|---|
 | `/work/input/config.json` | → into container | `horizon_weeks`, `n_reference_weeks` |
-| `/work/input/data.tsv` | → into container | Input timeseries (tab-separated) |
+| `/work/input/input.parquet` | → into container | Input timeseries (parquet) |
 | `/work/output/predictions.tsv` | ← out of container | Forecast results |
 
 ## Commands
@@ -45,17 +45,17 @@ docker run --rm \
 |---|---|
 | `src/model.py` | Pure `predict(df, horizon_weeks, n_reference_weeks)` function — no I/O, fully unit-testable |
 | `src/run.py` | Docker entrypoint: reads `/work/input/`, runs prediction logic inline, writes `/work/output/predictions.tsv` |
-| `tests/test_model.py` | Unit tests covering row count, columns, Modell label, horizon values, mean calculation, Kalenderwoche format |
+| `tests/test_model.py` | Unit tests covering row count, columns, horizon values, mean calculation, future-date format |
 
 
 ## Data format
 
-Input TSV columns: `Meldungen`, `Saison`, `Erkrankung`, `Altersgruppe`, `Region`, `Kalenderwoche`, `Inzidenz`
+Input parquet columns: `Erkrankung`, `Altersgruppe`, `Region`, `Kalenderwoche`, `Inzidenz`
 
 - `Kalenderwoche` format: `YYYY-WWW` (e.g. `"2011-W22"`) — parsed as Monday of that ISO week
-- Groups: `(Erkrankung, Altersgruppe, Region)`
+- The model operates on the fixed stratum `Region == "Bundesweit"`, `Altersgruppe == "15-34"`
 
-Output adds: `Modell` (identifier string), `Horizont_Wochen` (1-based week offset).
+Output columns (`predictions.tsv`): `Datum`, `Erkrankung`, `Inzidenz`
 
 ## Release
 
@@ -79,7 +79,7 @@ Use `run-model.sh` (not checked in to this repo — lives in the platform toolin
   -i ghcr.io/the-episerve-consortium/model__prediction__grippeweb__baseline-nullmodel \
   -t v0.1.0 \
   -c ./input/config.json \
-  -d ./input/data.tsv \
+  -d ./input/input.parquet \
   -n episerve
 ```
 

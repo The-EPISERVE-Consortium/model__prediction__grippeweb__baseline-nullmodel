@@ -24,6 +24,14 @@ config        = json.loads(config_path.read_text())
 horizon_weeks = int(config.get("horizon_weeks", 4))
 n_reference   = int(config.get("n_reference_weeks", 4))
 
+if horizon_weeks <= 0 or n_reference <= 0:
+    print(
+        "ERROR: config horizon_weeks and n_reference_weeks must both be > 0 "
+        f"(got horizon={horizon_weeks}, reference={n_reference})",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
 print(f"Config: horizon={horizon_weeks} weeks, reference={n_reference} weeks")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
@@ -44,10 +52,19 @@ if missing:
 # ── Convert: filter stratum, parse dates ──────────────────────────────────────
 df = df[(df["Region"] == FIXED_REGION) & (df["Altersgruppe"] == FIXED_ALTERSGRUPPE)]
 df["date"] = pd.to_datetime(
-    df["Kalenderwoche"].apply(lambda kw: datetime.strptime(kw + "-1", "%Y-W%W-%w")),
-    errors="coerce",
+    df["Kalenderwoche"].apply(lambda kw: datetime.strptime(kw + "-1", "%Y-W%W-%w"))
 )
-df = df.dropna(subset=["date"])
+
+# A malformed Kalenderwoche raises above (strptime has no coerce); if the
+# filtered/parsed dataset is empty, fail loudly instead of writing a
+# header-only output that the platform would treat as a successful forecast.
+if len(df) == 0:
+    print(
+        f"ERROR: no rows for region={FIXED_REGION}, "
+        f"altersgruppe={FIXED_ALTERSGRUPPE} after filtering and parsing",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 # ── Predict ───────────────────────────────────────────────────────────────────
 predictions = predict(

@@ -10,7 +10,7 @@ by averaging the last M reference weeks per group.
 | Path | Description |
 |---|---|
 | `/work/input/config.json` | Run parameters |
-| `/work/input/data.tsv` | Input timeseries |
+| `/work/input/input.parquet` | Input timeseries |
 | `/work/output/predictions.tsv` | Forecast output |
 
 ### config.json
@@ -35,6 +35,7 @@ docker run --rm \
 
 ## Output Format
 
-Same columns as input, plus:
-- `Modell` — model identifier
-- `Horizont_Wochen` — weeks ahead this row represents
+Each row is one forecast step:
+- `Datum` — ISO date (YYYY-MM-DD)
+- `Erkrankung` — disease group
+- `Inzidenz` — predicted incidence (rounded to 2 decimals)

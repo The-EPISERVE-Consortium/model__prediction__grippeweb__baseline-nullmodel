@@ -12,6 +12,11 @@ def predict(df: pd.DataFrame, horizon_weeks: int = 4, n_reference_weeks: int = 4
         group = group.sort_values("date")
         reference = group.tail(n_reference_weeks)
         mean_inzidenz = reference["Inzidenz"].mean()
+        if pd.isna(mean_inzidenz):
+            raise ValueError(
+                f"reference window for '{erkrankung}' contains non-finite "
+                "Inzidenz values; cannot produce a forecast"
+            )
         last_date = group["date"].iloc[-1]
         for w in range(1, horizon_weeks + 1):
             rows.append({
