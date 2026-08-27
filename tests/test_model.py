@@ -66,3 +66,13 @@ def test_future_dates_advance_weekly():
         dates = sorted(gdf["date"].tolist())
         gaps = [(dates[i+1] - dates[i]).days for i in range(len(dates) - 1)]
         assert all(g == 7 for g in gaps)
+
+
+def test_nan_reference_raises():
+    # NaN in the reference window must not silently propagate into the forecast
+    bad = SAMPLE.copy()
+    are = bad["Erkrankung"] == "ARE"
+    last_are_date = sorted(bad.loc[are, "date"].tolist())[-1]
+    bad.loc[are & (bad["date"] == last_are_date), "Inzidenz"] = float("nan")
+    with pytest.raises(ValueError):
+        predict(bad, horizon_weeks=2, n_reference_weeks=1)
