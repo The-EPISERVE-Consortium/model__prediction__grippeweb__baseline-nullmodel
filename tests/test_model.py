@@ -68,6 +68,22 @@ def test_future_dates_advance_weekly():
         assert all(g == 7 for g in gaps)
 
 
+def test_empty_input_raises():
+    # An empty input must raise rather than silently return an empty forecast
+    empty = pd.DataFrame(columns=["Erkrankung", "date", "Inzidenz"])
+    with pytest.raises(ValueError):
+        predict(empty, horizon_weeks=4, n_reference_weeks=4)
+
+
+def test_iso_week_year_boundary():
+    # Week 53 of 2015 is the last ISO week and belongs to ISO year 2015,
+    # not 2016. Parsing must use ISO %G/%V, not Monday-based %Y/%W.
+    from datetime import datetime as _dt
+    parsed = _dt.strptime("2015-W53-1", "%G-W%V-%w")
+    assert parsed.date() == _dt(2015, 12, 28).date()
+    assert parsed.strftime("%G-W%V") == "2015-W53"
+
+
 def test_nan_reference_raises():
     # NaN in the reference window must not silently propagate into the forecast
     bad = SAMPLE.copy()
