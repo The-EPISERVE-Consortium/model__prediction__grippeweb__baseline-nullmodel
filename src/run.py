@@ -51,8 +51,11 @@ if missing:
 
 # ── Convert: filter stratum, parse dates ──────────────────────────────────────
 df = df[(df["Region"] == FIXED_REGION) & (df["Altersgruppe"] == FIXED_ALTERSGRUPPE)]
+# Parse each Kalenderwoche (YYYY-WNN) as the Monday of the true ISO week,
+# using %G (ISO year) and %V (ISO week number) to stay correct across
+# year boundaries instead of the Monday-based %W week-of-year.
 df["date"] = pd.to_datetime(
-    df["Kalenderwoche"].apply(lambda kw: datetime.strptime(kw + "-1", "%Y-W%W-%w"))
+    df["Kalenderwoche"].apply(lambda kw: datetime.strptime(kw + "-1", "%G-W%V-%w"))
 )
 
 # A malformed Kalenderwoche raises above (strptime has no coerce); if the
