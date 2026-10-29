@@ -18,6 +18,15 @@ Every EPISERVE model container reads from and writes to fixed paths. The platfor
 | `/work/input/input.parquet` | → into container | Input timeseries (parquet) |
 | `/work/output/predictions.tsv` | ← out of container | Forecast results |
 
+## Model card
+
+`fdo.json` is the model card (EPISERVE model-card v1, spec in the
+`episerve_specs` repo). It declares the `config.json` parameters
+(`episerve:parameters`, mirrored in `additionalProperty`, which the platform
+still reads), the input/output files and columns, resources and documentation.
+Change it together with the code; check with `episerve-validate fdo.json` (CI
+job `model-card`).
+
 ## Commands
 
 ```bash

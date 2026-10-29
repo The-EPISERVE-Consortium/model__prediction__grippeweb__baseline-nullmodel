@@ -2,8 +2,8 @@
 
 Zero-model forecast container for EPISERVE.
 
-Reads a TSV timeseries of disease reports, predicts the next N weeks
-by averaging the last M reference weeks per group.
+Reads the GrippeWeb weekly report table (parquet), predicts the next N weeks
+by averaging the last M reference weeks per disease.
 
 ## I/O Contract
 
@@ -21,6 +21,24 @@ by averaging the last M reference weeks per group.
   "n_reference_weeks": 4
 }
 ```
+
+Both are optional integers ≥ 1, default 4.
+
+## Model card
+
+[`fdo.json`](fdo.json) is the model card, following the EPISERVE
+[model-card v1 spec](https://github.com/The-EPISERVE-Consortium/episerve_specs/blob/main/src/episerve_specs/specs/model_card/README.md):
+parameters (`episerve:parameters`, a JSON Schema of `config.json`), input and
+output files with their columns, resources and documentation. CI checks it
+(job `model-card`); locally:
+
+```bash
+pip install "git+https://github.com/The-EPISERVE-Consortium/episerve_specs@v0.1.0"
+episerve-validate fdo.json
+```
+
+The platform still reads the parameters from `additionalProperty`; the card
+keeps both, and the validator fails if they disagree.
 
 ## Local Testing
 
