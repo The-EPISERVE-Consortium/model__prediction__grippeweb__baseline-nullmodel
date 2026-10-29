@@ -33,12 +33,13 @@ output files with their columns, resources and documentation. CI checks it
 (job `model-card`); locally:
 
 ```bash
-pip install "git+https://github.com/The-EPISERVE-Consortium/episerve_specs@v0.1.0"
+pip install "git+https://github.com/The-EPISERVE-Consortium/episerve_specs@v0.2.0"
 episerve-validate fdo.json
 ```
 
-The platform still reads the parameters from `additionalProperty`; the card
-keeps both, and the validator fails if they disagree.
+The platform reads the card from this repository: the sync flow stores its
+sections in the catalog, and the API checks a run's config against
+`episerve:parameters` before starting it.
 
 ## Local Testing
 
